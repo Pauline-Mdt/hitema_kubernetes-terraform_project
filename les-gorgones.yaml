@@ -32,6 +32,7 @@ spec:
       containers:
         - name: database
           image: paulinemdt/microservice-database-image
+          imagePullPolicy: Always
           volumeMounts:
             - name: pm-lg-db-persistent-storage
               mountPath: /var/lib/mysql
@@ -72,6 +73,7 @@ spec:
       containers:
       - name: pm-lg-laravel-api-container
         image: paulinemdt/microservice-laravel-image
+        imagePullPolicy: Always
         env:
           - name: DB_HOST
             value: pm-lg-database-service
@@ -112,9 +114,10 @@ spec:
       containers:
       - name: pm-lg-react-app-container
         image: paulinemdt/microservice-react-image
+        imagePullPolicy: Always
         env:
           - name: REACT_APP_API_URL
-            value: pm-lg-backend-service
+            value: pm-lg-backend-service:80
         ports:
           - containerPort: 3000
             name: pm-lg-web-app
