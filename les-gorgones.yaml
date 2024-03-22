@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: les-gorgones-db-pvc
+  name: pm-les-gorgones-db-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,59 +10,118 @@ spec:
     requests:
       storage: 1Gi
 
+#---
+#apiVersion: v1
+#kind: Pod
+#metadata:
+#  name: pm-les-gorgones-pod
+#  labels:
+#    app: pm-les-gorgones
+#spec:
+#  volumes:
+#    - name: db-persistent-storage
+#      persistentVolumeClaim:
+#        claimName: db-pvc
+#  containers:
+#    - name: database
+#      image: paulinemdt/microservice-database-image
+#      volumeMounts:
+#        - name: db-persistent-storage
+#          mountPath: /var/lib/mysql
+#    - name: laravel-api
+#      image: paulinemdt/microservice-laravel-image
+#      env:
+#        - name: APP_KEY
+#          value: base64:E1W+tYjII5boogDNUejhNV68XRBy+s4pVCIANYryLBo=
+#      ports:
+#        - containerPort: 80
+#          name: http-web-api
+#    - name: react-app
+#      image: paulinemdt/microservice-react-image
+#      ports:
+#        - containerPort: 3000
+#          name: http-web-app
+
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: les-gorgones-deployment
-  labels:
-    app.kubernetes.io/name: proxy
+  name: pm-les-gorgones-database
 spec:
-  replicas: 3
+  replicas: 1
   selector:
-    matchLabels:
-      app: les-gorgones
+      matchLabels:
+      app: pm-les-gorgones
   template:
     metadata:
-      labels:
-        app: les-gorgones
+    labels:
+        app: pm-les-gorgones
     spec:
       volumes:
-        - name: db-persistent-storage
+        - name: pm-les-gorgones-db-persistent-storage
           persistentVolumeClaim:
-            claimName: les-gorgones-db-pvc
+            claimName: pm-les-gorgones-db-pvc
       containers:
-        - name: les-gorgones-database
+        - name: database
           image: paulinemdt/microservice-database-image
           volumeMounts:
-            - name: db-persistent-storage
+            - name: pm-les-gorgones-db-persistent-storage
               mountPath: /var/lib/mysql
-        - name: les-gorgones-laravel-api
-          image: paulinemdt/microservice-laravel-image
           ports:
-            - containerPort: 80
-              name: http-web-api
-        - name: les-gorgones-react-app
-          image: paulinemdt/microservice-react-image
-          ports:
-            - containerPort: 3000
-              name: http-web-app
+            - containerPort: 3306
+              name: pm-les-gorgones-http-web-db
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: les-gorgones-service
+  name: pm-les-gorgones-database-service
+spec:
+  type: ClusterIP
+  selector:
+    app: pm-les-gorgones
+  ports:
+    - name: pm-les-gorgones-database-port
+      protocol: TCP
+      port: 3306
+      targetPort: pm-les-gorgones-http-web-db
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pm-les-gorgones-backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pm-les-gorgones
+  template:
+    metadata:
+      labels:
+        app: pm-les-gorgones
+    spec:
+      containers:
+      - name: pm-les-gorgones-laravel-api-container
+        image: paulinemdt/microservice-laravel-image
+        env:
+          - name: DB_HOST
+            value: pm-les-gorgones-database-service
+        ports:
+          - containerPort: 80
+            name: pm-les-gorgones-http-web-api
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pm-les-gorgones-backend-service
 spec:
   type: LoadBalancer
   selector:
-    app.kubernetes.io/name: proxy
+    app: pm-les-gorgones
   ports:
-    - name: les-gorgones-laravel-api
+    - name: pm-les-gorgones-laravel-api-port
       protocol: TCP
       port: 80
-      targetPort: http-web-api
-    - name: les-gorgones-react-app
-      protocol: TCP
-      port: 3000
-      targetPort: http-web-app
+      targetPort: pm-les-gorgones-http-web-api
