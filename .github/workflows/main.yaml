@@ -47,4 +47,4 @@ jobs:
           kubectl apply -f les-gorgones.yaml
       - name: Restart deployment
         run: |
-          kubectl rollout restart deployment --selector='app=pm-lg'
+          kubectl rollout restart deployment -f les-gorgones.yaml
