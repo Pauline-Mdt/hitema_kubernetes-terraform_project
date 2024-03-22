@@ -7,7 +7,9 @@ BASE API
 const AUTH_TOKEN = 'Bearer '+getToken();
 
 export const http = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api',
+    // baseURL: 'http://api.les-gorgones.localhost/api',
+    // baseURL: 'http://127.0.0.1:8000/api',
+    baseURL: process.env.REACT_APP_API_URL,
     timeout: 1000,
     headers: {
         'Authorization' : AUTH_TOKEN,

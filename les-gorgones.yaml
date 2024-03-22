@@ -112,13 +112,16 @@ spec:
       containers:
       - name: pm-lg-react-app-container
         image: paulinemdt/microservice-react-image
+        env:
+          - name: REACT_APP_API_URL
+            value: pm-lg-backend-service
         ports:
           - containerPort: 3000
             name: pm-lg-web-app
 
 ---
 apiVersion: v1
-kind: LoadBalancer
+kind: Service
 metadata:
   name: pm-lg-frontend-service
 spec:
