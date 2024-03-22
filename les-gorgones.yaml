@@ -115,9 +115,9 @@ spec:
       - name: pm-lg-react-app-container
         image: paulinemdt/microservice-react-image
         imagePullPolicy: Always
-        env:
-          - name: REACT_APP_API_URL
-            value: pm-lg-backend-service
+#        env:
+#          - name: REACT_APP_API_URL
+#            value: pm-lg-backend-service
         ports:
           - containerPort: 3000
             name: pm-lg-web-app
