@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: db-pvc
+  name: les-gorgones-db-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -11,36 +11,42 @@ spec:
       storage: 1Gi
 
 ---
-apiVersion: v1
-kind: Pod
+apiVersion: apps/v1
+kind: Deployment
 metadata:
-  name: les-gorgones
+  name: les-gorgones-deployment
   labels:
     app.kubernetes.io/name: proxy
 spec:
-  volumes:
-    - name: db-persistent-storage
-      persistentVolumeClaim:
-        claimName: db-pvc
-  containers:
-    - name: les-gorgones-database
-      image: paulinemdt/microservice-database-image
-      volumeMounts:
-        - name: db-persistent-storage
-          mountPath: /var/lib/mysql
-    - name: les-gorgones-laravel-api
-      image: paulinemdt/microservice-laravel-image
-      env:
-        - name: APP_KEY
-          value: base64:E1W+tYjII5boogDNUejhNV68XRBy+s4pVCIANYryLBo=
-      ports:
-        - containerPort: 80
-          name: http-web-api
-    - name: les-gorgones-react-app
-      image: paulinemdt/microservice-react-image
-      ports:
-        - containerPort: 3000
-          name: http-web-app
+  replicas: 3
+  selector:
+    matchLabels:
+      app: les-gorgones
+  template:
+    metadata:
+      labels:
+        app: les-gorgones
+    spec:
+    volumes:
+      - name: db-persistent-storage
+        persistentVolumeClaim:
+          claimName: les-gorgones-db-pvc
+    containers:
+      - name: les-gorgones-database
+        image: paulinemdt/microservice-database-image
+        volumeMounts:
+          - name: db-persistent-storage
+            mountPath: /var/lib/mysql
+      - name: les-gorgones-laravel-api
+        image: paulinemdt/microservice-laravel-image
+        ports:
+          - containerPort: 80
+            name: http-web-api
+      - name: les-gorgones-react-app
+        image: paulinemdt/microservice-react-image
+        ports:
+          - containerPort: 3000
+            name: http-web-app
 
 ---
 apiVersion: v1
@@ -48,7 +54,7 @@ kind: Service
 metadata:
   name: les-gorgones-service
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app.kubernetes.io/name: proxy
   ports:

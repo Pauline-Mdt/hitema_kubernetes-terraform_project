@@ -1,10 +1,8 @@
-name: GitHub Actions
+name: Deploy to Kubernetes
 run-name: ${{ github.actor }} ${{ github.event_name }} on ${{ github.head_ref || github.ref_name }}
 
 on:
   push:
-    branches: master
-  pull_request:
     branches: master
 
 jobs:
@@ -40,8 +38,6 @@ jobs:
       - name: Connect to Azure
         run: |
           az login ${{ secrets.AZURE_CREDENTIALS }}
-#          az login --use-device-code
-#          az login --username ${{ secrets.AZURE_USERNAME }} --password ${{ secrets.AZURE_PASSWORD }}
       - name: Connect to Kubernetes cluster
         run: |
           az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION }}
