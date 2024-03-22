@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: pm-les-gorgones-db-pvc
+  name: pm-lg-db-pvc
 spec:
   accessModes:
     - ReadWriteOnce
@@ -10,118 +10,123 @@ spec:
     requests:
       storage: 1Gi
 
-#---
-#apiVersion: v1
-#kind: Pod
-#metadata:
-#  name: pm-les-gorgones-pod
-#  labels:
-#    app: pm-les-gorgones
-#spec:
-#  volumes:
-#    - name: db-persistent-storage
-#      persistentVolumeClaim:
-#        claimName: db-pvc
-#  containers:
-#    - name: database
-#      image: paulinemdt/microservice-database-image
-#      volumeMounts:
-#        - name: db-persistent-storage
-#          mountPath: /var/lib/mysql
-#    - name: laravel-api
-#      image: paulinemdt/microservice-laravel-image
-#      env:
-#        - name: APP_KEY
-#          value: base64:E1W+tYjII5boogDNUejhNV68XRBy+s4pVCIANYryLBo=
-#      ports:
-#        - containerPort: 80
-#          name: http-web-api
-#    - name: react-app
-#      image: paulinemdt/microservice-react-image
-#      ports:
-#        - containerPort: 3000
-#          name: http-web-app
-
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pm-les-gorgones-database
+  name: pm-lg-database
 spec:
   replicas: 1
   selector:
-      matchLabels:
-      app: pm-les-gorgones
+    matchLabels:
+      app: pm-lg
   template:
     metadata:
-    labels:
-        app: pm-les-gorgones
+      labels:
+          app: pm-lg
     spec:
       volumes:
-        - name: pm-les-gorgones-db-persistent-storage
+        - name: pm-lg-db-persistent-storage
           persistentVolumeClaim:
-            claimName: pm-les-gorgones-db-pvc
+            claimName: pm-lg-db-pvc
       containers:
         - name: database
           image: paulinemdt/microservice-database-image
           volumeMounts:
-            - name: pm-les-gorgones-db-persistent-storage
+            - name: pm-lg-db-persistent-storage
               mountPath: /var/lib/mysql
           ports:
             - containerPort: 3306
-              name: pm-les-gorgones-http-web-db
+              name: pm-lg-web-db
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: pm-les-gorgones-database-service
+  name: pm-lg-database-service
 spec:
   type: ClusterIP
   selector:
-    app: pm-les-gorgones
+    app: pm-lg
   ports:
-    - name: pm-les-gorgones-database-port
+    - name: pm-lg-database-port
       protocol: TCP
       port: 3306
-      targetPort: pm-les-gorgones-http-web-db
+      targetPort: pm-lg-web-db
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pm-les-gorgones-backend
+  name: pm-lg-backend
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: pm-les-gorgones
+      app: pm-lg
   template:
     metadata:
       labels:
-        app: pm-les-gorgones
+        app: pm-lg
     spec:
       containers:
-      - name: pm-les-gorgones-laravel-api-container
+      - name: pm-lg-laravel-api-container
         image: paulinemdt/microservice-laravel-image
         env:
           - name: DB_HOST
-            value: pm-les-gorgones-database-service
+            value: pm-lg-database-service
         ports:
           - containerPort: 80
-            name: pm-les-gorgones-http-web-api
+            name: pm-lg-web-api
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: pm-les-gorgones-backend-service
+  name: pm-lg-backend-service
 spec:
   type: LoadBalancer
   selector:
-    app: pm-les-gorgones
+    app: pm-lg
   ports:
-    - name: pm-les-gorgones-laravel-api-port
+    - name: pm-lg-laravel-api-port
       protocol: TCP
       port: 80
-      targetPort: pm-les-gorgones-http-web-api
+      targetPort: pm-lg-web-api
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pm-lg-frontend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: pm-lg
+  template:
+    metadata:
+      labels:
+          app: pm-lg
+    spec:
+      containers:
+      - name: pm-lg-react-app-container
+        image: paulinemdt/microservice-react-image
+        ports:
+          - containerPort: 3000
+            name: pm-lg-web-app
+
+---
+apiVersion: v1
+kind: LoadBalancer
+metadata:
+  name: pm-lg-frontend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: pm-lg
+  ports:
+    - name: pm-lg-react-app-port
+      protocol: TCP
+      port: 3000
+      targetPort: pm-lg-web-app
