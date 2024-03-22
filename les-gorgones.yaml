@@ -117,7 +117,7 @@ spec:
         imagePullPolicy: Always
         env:
           - name: REACT_APP_API_URL
-            value: http://pm-lg-backend-service
+            value: pm-lg-backend-service
         ports:
           - containerPort: 3000
             name: pm-lg-web-app
